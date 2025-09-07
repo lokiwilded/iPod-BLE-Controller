@@ -37,12 +37,13 @@ class BackendThread(threading.Thread):
         """Continuously checks the system volume and updates the UI."""
         last_vol = -1
         while True:
+            # We only check volume if we are connected to the iPod
             if self.ble_handler.client and self.ble_handler.client.is_connected:
                 current_vol = system_info.get_master_volume_level()
                 if current_vol != last_vol:
                     last_vol = current_vol
                     self.ui_queue.put({"type": "volume_update", "value": current_vol})
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.5) # Check volume twice a second
 
     async def media_session_monitor(self):
         """Finds a media session, attaches listeners, and handles metadata."""
@@ -57,21 +58,30 @@ class BackendThread(threading.Thread):
 
             if new_track_id != current_track_id and properties.get('title'):
                 current_track_id = new_track_id
+                
+                # Enrich with Last.fm data
                 enriched_properties = media_fetcher.enrich_with_lastfm(properties, LASTFM_API_KEY, LASTFM_API_SECRET)
+                
+                # Get timeline and volume data and add it to the dictionary
                 enriched_properties['timeline'] = await system_info.get_timeline_properties(session_to_update)
                 enriched_properties['volume'] = system_info.get_master_volume_level()
+
+                # Put the full data packet onto the queue for the UI to display
                 self.ui_queue.put({"type": "media_update", "data": enriched_properties})
+
+                # Format and send the payload over Bluetooth for the iPod
                 bt_payload = self.format_bt_payload(enriched_properties)
                 await self.ble_handler.send_metadata(bt_payload)
 
+        # Main loop for this task
         while True:
             if not self.ble_handler.client or not self.ble_handler.client.is_connected:
-                self.ui_queue.put({"type": "status_update", "message": "Scanning..."})
+                self.ui_queue.put({"type": "status_update", "message": "Scanning for iPod..."})
                 await self.ble_handler.connect()
                 if self.ble_handler.client and self.ble_handler.client.is_connected:
                      self.ui_queue.put({"type": "status_update", "message": "Connected"})
                 else:
-                    self.ui_queue.put({"type": "status_update", "message": "Disconnected"})
+                    self.ui_queue.put({"type": "status_update", "message": "Disconnected. Retrying..."})
                     await asyncio.sleep(5)
                     continue
 

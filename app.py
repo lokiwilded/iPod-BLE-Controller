@@ -34,9 +34,12 @@ class App(ctk.CTk):
         self.time_label = ctk.CTkLabel(self, text="0:00 / 0:00", font=("Segoe UI", 10), text_color="gray60")
         self.time_label.place(relx=0.5, rely=0.8, relwidth=0.9, anchor="n")
 
+        self.volume_label = ctk.CTkLabel(self, text="Volume", font=("Segoe UI", 10), text_color="gray60", anchor="w")
+        self.volume_label.place(relx=0.05, rely=0.85, anchor="w")
+        
         self.volume_bar = ctk.CTkProgressBar(self)
         self.volume_bar.set(0)
-        self.volume_bar.place(relx=0.5, rely=0.88, relwidth=0.9, anchor="n")
+        self.volume_bar.place(relx=0.5, rely=0.9, relwidth=0.9, anchor="n")
         
         self.status_label = ctk.CTkLabel(self, text="Initializing...", anchor="w", text_color="gray50")
         self.status_label.place(relx=0.02, rely=0.98, anchor="sw")
@@ -74,14 +77,15 @@ class App(ctk.CTk):
         try:
             while not self.ui_queue.empty():
                 message = self.ui_queue.get_nowait()
-                
-                if message["type"] == "status_update":
+                msg_type = message.get("type")
+
+                if msg_type == "status_update":
                     self.status_label.configure(text=message["message"])
                 
-                elif message["type"] == "volume_update":
+                elif msg_type == "volume_update":
                     self.volume_bar.set(message["value"] / 100)
 
-                elif message["type"] == "media_update":
+                elif msg_type == "media_update":
                     data = message["data"]
                     title = data.get('title', 'Not Playing')
                     artist = data.get('artist', '')
