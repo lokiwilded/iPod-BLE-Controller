@@ -1,0 +1,9 @@
+pylast
+winsdk
+python-dotenv
+bleak
+pycaw
+comtypes
+customtkinter
+Pillow
+requests
