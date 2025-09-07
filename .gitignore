@@ -7,6 +7,6 @@ __pycache__/
 .pio/
 .vscode/
 
-# OS files
+# OS specific
 .DS_Store
 Thumbs.db
