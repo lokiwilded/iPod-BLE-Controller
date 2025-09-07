@@ -16,7 +16,7 @@ def get_master_volume_level():
 
 async def get_timeline_properties(session):
     """
-    Fetches the timeline properties (start, end, position) for a media session.
+    Fetches the timeline properties for a media session.
     Returns a dictionary with times in seconds.
     """
     if not session:
